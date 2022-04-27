@@ -15,10 +15,7 @@ func TestSmoothie(t *testing.T) {
 	s.Inc()
 	s.Inc()
 	s.Inc()
-	x, count := s.Delay()
-	if got, want := count, int64(3); got != want {
-		t.Errorf("bad delay: %d, expected: %d", got, want)
-	}
+	x := s.Delay()
 	if got, want := x, 20*time.Minute; got != want {
 		t.Errorf("bad delay: %s, expected: %s", got, want)
 	}

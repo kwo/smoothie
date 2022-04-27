@@ -8,7 +8,7 @@ import (
 
 type Smoothie struct {
 	bus             chan int64
-	cmd             chan func(time.Duration, int64)
+	cmd             chan func(time.Duration)
 	entries         map[int64]int64
 	interval        time.Duration
 	cleanupInterval time.Duration
@@ -18,7 +18,7 @@ type Smoothie struct {
 func New(ctx context.Context, interval, cleanupInterval time.Duration) *Smoothie {
 	s := &Smoothie{
 		bus:             make(chan int64),
-		cmd:             make(chan func(time.Duration, int64)),
+		cmd:             make(chan func(time.Duration)),
 		entries:         make(map[int64]int64),
 		interval:        interval,
 		cleanupInterval: cleanupInterval,
@@ -27,18 +27,16 @@ func New(ctx context.Context, interval, cleanupInterval time.Duration) *Smoothie
 	return s
 }
 
-func (z *Smoothie) Delay() (time.Duration, int64) {
+func (z *Smoothie) Delay() time.Duration {
 	var result time.Duration
-	var total int64
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
-	z.cmd <- func(d time.Duration, totl int64) {
+	z.cmd <- func(d time.Duration) {
 		result = d
-		total = totl
 		wg.Done()
 	}
 	wg.Wait()
-	return result, total
+	return result
 }
 
 func (z *Smoothie) Inc() {
@@ -54,7 +52,7 @@ func (z *Smoothie) cleanup() {
 	}
 }
 
-func (z *Smoothie) delay() (time.Duration, int64) {
+func (z *Smoothie) delay() time.Duration {
 	var total int64
 	since := time.Now().Add(-1 * z.interval).Unix()
 	for ts, count := range z.entries {
@@ -63,9 +61,9 @@ func (z *Smoothie) delay() (time.Duration, int64) {
 		}
 	}
 	if total == 0 {
-		return 0, total
+		return 0
 	}
-	return (z.interval / time.Duration(total)), total
+	return (z.interval / time.Duration(total))
 }
 
 func (z *Smoothie) inc(t int64) {
